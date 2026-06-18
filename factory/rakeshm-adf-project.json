@@ -1,0 +1,21 @@
+{
+	"name": "rakeshm-adf-project",
+	"properties": {
+		"globalParameters": {
+			"test_parameter": {
+				"type": "string",
+				"value": "nothing"
+			}
+		},
+		"trustModeClaimForMi": {
+			"value": "Disabled",
+			"editable": true
+		}
+	},
+	"location": "canadacentral",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "e8f81bbc-afc5-46df-9cf0-272a901d16fd",
+		"tenantId": "c59750a4-aa39-412e-9762-047593de1d7e"
+	}
+}

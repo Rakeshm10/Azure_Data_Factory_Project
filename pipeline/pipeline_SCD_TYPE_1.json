@@ -1,0 +1,48 @@
+{
+	"name": "pipeline_SCD_TYPE_1",
+	"properties": {
+		"activities": [
+			{
+				"name": "df_scd_type_1",
+				"type": "ExecuteDataFlow",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataflow": {
+						"referenceName": "df_scd_type_1",
+						"type": "DataFlowReference",
+						"datasetParameters": {
+							"sourceemployee": {
+								"schema_name": "source",
+								"table_name": "source_employee"
+							},
+							"dimemployee": {
+								"schema_name": "target",
+								"table_name": "dim_employee"
+							},
+							"sink1": {
+								"schema_name": "target",
+								"table_name": "dim_employee"
+							}
+						}
+					},
+					"compute": {
+						"coreCount": 8,
+						"computeType": "General"
+					},
+					"traceLevel": "Fine"
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2026-06-16T05:43:21Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

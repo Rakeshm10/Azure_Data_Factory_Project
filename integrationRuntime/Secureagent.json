@@ -1,0 +1,6 @@
+{
+	"name": "Secureagent",
+	"properties": {
+		"type": "SelfHosted"
+	}
+}

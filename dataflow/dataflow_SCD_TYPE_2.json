@@ -1,0 +1,156 @@
+{
+	"name": "dataflow_SCD_TYPE_2",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "ds_sql_source",
+						"type": "DatasetReference"
+					},
+					"name": "sourceemployee"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_sql_source",
+						"type": "DatasetReference"
+					},
+					"name": "dimemployee"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "ds_sql_source",
+						"type": "DatasetReference"
+					},
+					"name": "sinkemployeechanged"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_sql_source",
+						"type": "DatasetReference"
+					},
+					"name": "sinkinsertemployee"
+				}
+			],
+			"transformations": [
+				{
+					"name": "lookup1"
+				},
+				{
+					"name": "resolveduplicatecolumn"
+				},
+				{
+					"name": "SplitRecords"
+				},
+				{
+					"name": "SetExpiryDates"
+				},
+				{
+					"name": "MarkAsUpdate"
+				},
+				{
+					"name": "MergeInserts"
+				},
+				{
+					"name": "SetNewActiveDates"
+				},
+				{
+					"name": "MarkAsInsert"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          emp_id as integer,",
+				"          emp_name as string,",
+				"          city as string,",
+				"          last_modified as timestamp",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> sourceemployee",
+				"source(output(",
+				"          emp_skey as integer,",
+				"          emp_id as integer,",
+				"          emp_name as string,",
+				"          city as string,",
+				"          start_date as timestamp,",
+				"          end_date as timestamp,",
+				"          is_current as integer",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> dimemployee",
+				"sourceemployee, dimemployee lookup(sourceemployee@emp_id == dimemployee@emp_id",
+				"     && 1 == is_current,",
+				"     multiple: false,",
+				"     pickup: 'any',",
+				"     broadcast: 'right')~> lookup1",
+				"lookup1 select(mapColumn(",
+				"          src_emp_id = sourceemployee@emp_id,",
+				"          src_emp_name = sourceemployee@emp_name,",
+				"          src_city = sourceemployee@city,",
+				"          src_last_modified = last_modified,",
+				"          lkp_emp_skey = emp_skey,",
+				"          lkp_emp_id = dimemployee@emp_id,",
+				"          lkp_emp_name = dimemployee@emp_name,",
+				"          lkp_city = dimemployee@city,",
+				"          lkp_start_date = start_date,",
+				"          lkp_end_date = end_date,",
+				"          lkp_is_current = is_current",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> resolveduplicatecolumn",
+				"resolveduplicatecolumn split(isNull(lkp_emp_id),",
+				"     !isNull(lkp_emp_id) && (coalesce(src_emp_name, '') != coalesce(lkp_emp_name, '') || coalesce(src_city, '') != coalesce(lkp_city, '')),",
+				"     disjoint: false) ~> SplitRecords@(NewRows, ChangedRows, useless)",
+				"SplitRecords@ChangedRows derive(lkp_end_date = currentTimestamp(),",
+				"          lkp_is_current = 0) ~> SetExpiryDates",
+				"SetExpiryDates alterRow(updateIf(true())) ~> MarkAsUpdate",
+				"SplitRecords@NewRows, SplitRecords@ChangedRows union(byName: true)~> MergeInserts",
+				"MergeInserts derive(lkp_start_date = currentTimestamp(),",
+				"          lkp_end_date = toTimestamp('9999-12-31', 'yyyy-MM-dd'),",
+				"          lkp_is_current = 1) ~> SetNewActiveDates",
+				"SetNewActiveDates alterRow(insertIf(true())) ~> MarkAsInsert",
+				"MarkAsUpdate sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:false,",
+				"     updateable:true,",
+				"     upsertable:false,",
+				"     keys:['emp_skey'],",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          end_date = lkp_end_date,",
+				"          emp_skey = lkp_emp_skey,",
+				"          is_current = lkp_is_current",
+				"     )) ~> sinkemployeechanged",
+				"MarkAsInsert sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          emp_id = src_emp_id,",
+				"          emp_name = src_emp_name,",
+				"          start_date = lkp_start_date,",
+				"          end_date = lkp_end_date,",
+				"          is_current = lkp_is_current,",
+				"          city = src_city",
+				"     )) ~> sinkinsertemployee"
+			]
+		}
+	}
+}

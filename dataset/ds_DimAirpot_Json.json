@@ -1,0 +1,21 @@
+{
+	"name": "ds_DimAirpot_Json",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_data_lake_connection",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "DimAirport.json",
+				"folderPath": "csv_files",
+				"fileSystem": "bronze"
+			}
+		},
+		"schema": {}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

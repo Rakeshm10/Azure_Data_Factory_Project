@@ -1,0 +1,209 @@
+{
+	"name": "pipeline_incrmental_data_using_watermark_table",
+	"properties": {
+		"activities": [
+			{
+				"name": "Lookup_OldTime",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "SELECT last_modified_date as last_date from @{pipeline().parameters.lkp_schema}.@{pipeline().parameters.lkp_table_name} where table_name = '@{pipeline().parameters.src_table_name}';",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "ds_sql_source",
+						"type": "DatasetReference",
+						"parameters": {
+							"schema_name": "source",
+							"table_name": "lookupdate"
+						}
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "lookup_new_time",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "Lookup_OldTime",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "SELECT max(booking_date) as new_date from @{pipeline().parameters.src_schema}.@{pipeline().parameters.src_table_name};",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "ds_sql_source",
+						"type": "DatasetReference",
+						"parameters": {
+							"schema_name": "source",
+							"table_name": "FactBookings"
+						}
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "Incremental_dat_copy",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "lookup_new_time",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "select * from @{pipeline().parameters.src_schema}.@{pipeline().parameters.src_table_name}  where booking_date > '@{activity('Lookup_OldTime').output.value[0].last_date}' and booking_date <= '@{activity('lookup_new_time').output.value[0].new_date}'",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"sink": {
+						"type": "AzureSqlSink",
+						"writeBehavior": "insert",
+						"sqlWriterUseTableLock": false,
+						"disableMetricsCollection": false
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_sql_source",
+						"type": "DatasetReference",
+						"parameters": {
+							"schema_name": "source",
+							"table_name": "FactBookings"
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ds_sql_source",
+						"type": "DatasetReference",
+						"parameters": {
+							"schema_name": "target",
+							"table_name": "FactBookings_tgt"
+						}
+					}
+				]
+			},
+			{
+				"name": "update_date_lookup",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "Incremental_dat_copy",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[source].[update_date]",
+					"storedProcedureParameters": {
+						"LastModifiedDate": {
+							"value": {
+								"value": "@formatDateTime(activity('lookup_new_time').output.value[0].new_date,'yyyy-MM-dd HH:mm:ss')",
+								"type": "Expression"
+							},
+							"type": "DateTime"
+						},
+						"TableName": {
+							"value": {
+								"value": "@pipeline().parameters.src_table_name",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "ls_azure_sql",
+					"type": "LinkedServiceReference"
+				}
+			}
+		],
+		"parameters": {
+			"lkp_schema": {
+				"type": "string"
+			},
+			"lkp_table_name": {
+				"type": "string"
+			},
+			"src_schema": {
+				"type": "string"
+			},
+			"src_table_name": {
+				"type": "string"
+			},
+			"Std_pre_schema": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2026-06-15T13:32:58Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

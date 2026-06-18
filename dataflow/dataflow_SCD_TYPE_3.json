@@ -1,0 +1,108 @@
+{
+	"name": "dataflow_SCD_TYPE_3",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "ds_sql_source",
+						"type": "DatasetReference"
+					},
+					"name": "sourceemployee"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_sql_source",
+						"type": "DatasetReference"
+					},
+					"name": "dimemployee"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "ds_sql_source",
+						"type": "DatasetReference"
+					},
+					"name": "sinkemployee"
+				}
+			],
+			"transformations": [
+				{
+					"name": "MatchTarget"
+				},
+				{
+					"name": "RenamingColumns"
+				},
+				{
+					"name": "derivedColumn1"
+				},
+				{
+					"name": "Markupsert"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          emp_id as integer,",
+				"          emp_name as string,",
+				"          city as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> sourceemployee",
+				"source(output(",
+				"          emp_id as integer,",
+				"          emp_name as string,",
+				"          current_city as string,",
+				"          previous_city as string,",
+				"          effective_date as timestamp",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> dimemployee",
+				"sourceemployee, dimemployee lookup(sourceemployee@emp_id == dimemployee@emp_id,",
+				"     multiple: false,",
+				"     pickup: 'any',",
+				"     broadcast: 'auto')~> MatchTarget",
+				"MatchTarget select(mapColumn(",
+				"          src_emp_id = sourceemployee@emp_id,",
+				"          src_emp_name = sourceemployee@emp_name,",
+				"          src_city = city,",
+				"          lkp_emp_id = dimemployee@emp_id,",
+				"          lkp_emp_name = dimemployee@emp_name,",
+				"          lkp_current_city = current_city,",
+				"          lkp_previous_city = previous_city,",
+				"          lkp_effective_date = effective_date",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> RenamingColumns",
+				"RenamingColumns derive(lkp_previous_city = iif(isNull(lkp_emp_id),toString(null()),iif(coalesce(src_city,'')!= coalesce(lkp_current_city,''),lkp_current_city,lkp_previous_city)),",
+				"          lkp_current_city = src_city,",
+				"          lkp_effective_date = currentTimestamp()) ~> derivedColumn1",
+				"derivedColumn1 alterRow(insertIf(isNull(lkp_emp_id)),",
+				"     updateIf(!isNull(lkp_emp_id))) ~> Markupsert",
+				"Markupsert sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:true,",
+				"     upsertable:false,",
+				"     keys:['emp_id'],",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          emp_id = src_emp_id,",
+				"          emp_name = src_emp_name,",
+				"          previous_city = lkp_previous_city,",
+				"          effective_date = lkp_effective_date,",
+				"          current_city = lkp_current_city",
+				"     )) ~> sinkemployee"
+			]
+		}
+	}
+}

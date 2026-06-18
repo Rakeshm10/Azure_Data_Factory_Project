@@ -1,0 +1,93 @@
+{
+	"name": "df_scd_type_1",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "ds_sql_source",
+						"type": "DatasetReference"
+					},
+					"name": "sourceemployee"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_sql_source",
+						"type": "DatasetReference"
+					},
+					"name": "dimemployee"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "ds_sql_source",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "GetTargetData"
+				},
+				{
+					"name": "SetDates"
+				},
+				{
+					"name": "alterRow1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          emp_id as integer,",
+				"          emp_name as string,",
+				"          city as string,",
+				"          last_modified as timestamp",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> sourceemployee",
+				"source(output(",
+				"          emp_id as integer,",
+				"          emp_name as string,",
+				"          city as string,",
+				"          inserted_date as timestamp,",
+				"          updated_date as timestamp",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> dimemployee",
+				"sourceemployee, dimemployee lookup(sourceemployee@emp_id == dimemployee@emp_id,",
+				"     multiple: false,",
+				"     pickup: 'any',",
+				"     broadcast: 'auto')~> GetTargetData",
+				"GetTargetData derive(inserted_date = iif(isNull(inserted_date), last_modified, inserted_date),",
+				"          updated_date = currentTimestamp()) ~> SetDates",
+				"SetDates alterRow(insertIf(isNull(dimemployee@emp_id)),",
+				"     updateIf(!isNull(dimemployee@emp_id))) ~> alterRow1",
+				"alterRow1 sink(allowSchemaDrift: true,",
+				"     validateSchema: true,",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:true,",
+				"     upsertable:false,",
+				"     keys:['emp_id'],",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          emp_id = sourceemployee@emp_id,",
+				"          emp_name = sourceemployee@emp_name,",
+				"          city = sourceemployee@city,",
+				"          inserted_date,",
+				"          updated_date",
+				"     )) ~> sink1"
+			]
+		}
+	}
+}
