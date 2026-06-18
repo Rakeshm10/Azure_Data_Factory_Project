@@ -1,0 +1,36 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "rakeshm-adf-project"
+		},
+		"ls_azure_sql_password": {
+			"value": ""
+		},
+		"ls_data_lake_connection_accountKey": {
+			"value": ""
+		},
+		"ls_azure_sql_properties_typeProperties_server": {
+			"value": "dfadvanceserver.database.windows.net"
+		},
+		"ls_azure_sql_properties_typeProperties_database": {
+			"value": "df-db"
+		},
+		"ls_azure_sql_properties_typeProperties_userName": {
+			"value": "rakesh"
+		},
+		"ls_data_lake_connection_properties_typeProperties_url": {
+			"value": "https://adfrakeshmstorage.dfs.core.windows.net/"
+		},
+		"ls_github_properties_typeProperties_url": {
+			"value": "https://raw.githubusercontent.com"
+		},
+		"containerUri": {
+			"value": ""
+		},
+		"containerSasToken": {
+			"value": ""
+		}
+	}
+}
