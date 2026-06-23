@@ -5,6 +5,9 @@
 		"factoryName": {
 			"value": "rakeshm-adf-project"
 		},
+		"ls_azure_databricks_accessToken": {
+			"value": ""
+		},
 		"ls_azure_sql_password": {
 			"value": ""
 		},

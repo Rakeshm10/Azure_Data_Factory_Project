@@ -7,6 +7,10 @@
 			"metadata": "Data Factory name",
 			"defaultValue": "rakeshm-adf-project"
 		},
+		"ls_azure_databricks_accessToken": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accessToken' of 'ls_azure_databricks'"
+		},
 		"ls_azure_sql_password": {
 			"type": "secureString",
 			"metadata": "Secure string for 'password' of 'ls_azure_sql'"
@@ -1683,6 +1687,42 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/pipeline_running_databricks_notebook')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Notebook",
+						"type": "DatabricksNotebook",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"notebookPath": "/Users/methkurakesh422@gmail.com/Azure_Databricks/ADF_notebook"
+						},
+						"linkedServiceName": {
+							"referenceName": "ls_azure_databricks",
+							"type": "LinkedServiceReference"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_azure_databricks')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/Dynamic_dataset_data_lake')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
@@ -2085,6 +2125,31 @@
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/linkedServices/ls_data_lake_connection')]"
 			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ls_azure_databricks')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureDatabricks",
+				"typeProperties": {
+					"domain": "https://adb-7405604687718703.3.azuredatabricks.net",
+					"accessToken": {
+						"type": "SecureString",
+						"value": "[parameters('ls_azure_databricks_accessToken')]"
+					},
+					"newClusterNodeType": "Standard_D4pds_v6",
+					"newClusterNumOfWorker": "1",
+					"newClusterSparkEnvVars": {
+						"PYSPARK_PYTHON": "/databricks/python3/bin/python3"
+					},
+					"newClusterVersion": "17.3.x-scala2.13",
+					"clusterOption": "Fixed",
+					"newClusterInitScripts": []
+				}
+			},
+			"dependsOn": []
 		},
 		{
 			"name": "[concat(parameters('factoryName'), '/ls_azure_sql')]",
