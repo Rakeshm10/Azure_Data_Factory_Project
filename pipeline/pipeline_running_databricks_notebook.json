@@ -15,7 +15,7 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"notebookPath": "/Users/methkurakesh422@gmail.com/Azure_Databricks/tutorial_1"
+					"notebookPath": "/Users/methkurakesh422@gmail.com/Azure_Databricks/ADF_notebook"
 				},
 				"linkedServiceName": {
 					"referenceName": "ls_azure_databricks",
