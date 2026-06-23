@@ -1,15 +1,19 @@
 {
 	"name": "ls_databricks",
 	"properties": {
+		"annotations": [],
 		"type": "AzureDatabricks",
 		"typeProperties": {
 			"domain": "https://adb-7405612306301068.8.azuredatabricks.net",
-			"authenticationType": "ManagedServiceIdentity",
+			"authentication": "MSI",
 			"workspaceResourceId": "/subscriptions/a2688eea-3379-4c1a-a78c-d522a44487ef/resourceGroups/rg-azure-databricks/providers/Microsoft.Databricks/workspaces/rakeshm-databricks-1005",
-			"newClusterVersion": "14.3.x-scala2.12",
-			"newClusterNodeType": "Standard_D4ds_v5",
+			"newClusterNodeType": "Standard_DS3_v2",
+			"newClusterNumOfWorker": "1",
+			"newClusterVersion": "18.x-photon-scala2.13",
+			"clusterOption": "Fixed",
+			"newClusterInitScripts": [],
+			"authenticationType": "ManagedServiceIdentity",
 			"newClusterNumOfWorkers": 1
-		},
-		"annotations": []
+		}
 	}
 }
