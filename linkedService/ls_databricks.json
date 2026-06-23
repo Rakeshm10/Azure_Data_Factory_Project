@@ -1,0 +1,12 @@
+{
+	"name": "ls_databricks",
+	"properties": {
+		"annotations": [],
+		"type": "AzureDatabricks",
+		"typeProperties": {
+			"domain": "https://adb-7405612306301068.8.azuredatabricks.net",
+			"authentication": "MSI",
+			"workspaceResourceId": "/subscriptions/a2688eea-3379-4c1a-a78c-d522a44487ef/resourceGroups/rg-azure-databricks/providers/Microsoft.Databricks/workspaces/rakeshm-databricks-1005"
+		}
+	}
+}
