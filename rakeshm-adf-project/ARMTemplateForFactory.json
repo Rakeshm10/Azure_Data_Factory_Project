@@ -7,10 +7,6 @@
 			"metadata": "Data Factory name",
 			"defaultValue": "rakeshm-adf-project"
 		},
-		"ls_azure_databricks_accessToken": {
-			"type": "secureString",
-			"metadata": "Secure string for 'accessToken' of 'ls_azure_databricks'"
-		},
 		"ls_azure_sql_password": {
 			"type": "secureString",
 			"metadata": "Secure string for 'password' of 'ls_azure_sql'"
@@ -2135,16 +2131,14 @@
 				"type": "AzureDatabricks",
 				"typeProperties": {
 					"domain": "https://adb-7405604687718703.3.azuredatabricks.net",
-					"accessToken": {
-						"type": "SecureString",
-						"value": "[parameters('ls_azure_databricks_accessToken')]"
-					},
-					"newClusterNodeType": "Standard_D4pds_v6",
+					"authentication": "MSI",
+					"workspaceResourceId": "/subscriptions/a2688eea-3379-4c1a-a78c-d522a44487ef/resourceGroups/rg-azure-databricks/providers/Microsoft.Databricks/workspaces/rakeshm-databricks",
+					"newClusterNodeType": "Standard_DS4_v2",
 					"newClusterNumOfWorker": "1",
 					"newClusterSparkEnvVars": {
 						"PYSPARK_PYTHON": "/databricks/python3/bin/python3"
 					},
-					"newClusterVersion": "17.3.x-scala2.13",
+					"newClusterVersion": "18.2.x-photon-scala2.13",
 					"clusterOption": "Fixed",
 					"newClusterInitScripts": []
 				}
